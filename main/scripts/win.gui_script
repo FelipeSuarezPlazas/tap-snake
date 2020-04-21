@@ -1,0 +1,32 @@
+function init(self)
+	msg.post(".", "acquire_input_focus")
+
+	self.level = gui.get_node("level")
+	gui.set_text(self.level, "level "..data[level_id]-1)
+
+	self.money = gui.get_node("money")
+	gui.set_text(self.money, data[last_money_collected_id])
+
+	self.btns = {}
+	self.btns["collect"] = gui.get_node("collect_btn")
+end
+
+function on_message(self, message_id, message, sender)
+	-- Add message-handling code here
+	-- Remove this function if not needed
+end
+
+function on_input(self, action_id, action)
+	print("win input focus")
+	if action_id == hash("touch") and action.released then
+		print("pressed action")
+		if gui.pick_node(self.btns["collect"], action.x, action.y) then
+			switch(self, "menu")
+		end
+	end
+end
+
+function on_reload(self)
+	-- Add input-handling code here
+	-- Remove this function if not needed
+end

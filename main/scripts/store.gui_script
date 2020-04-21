@@ -1,0 +1,27 @@
+function init(self)
+	msg.post(".", "acquire_input_focus")
+
+	-- Money percentage
+	self.money_percentage = gui.get_node("money_percentage")
+	local money_percentage_string = data[money_id].." / "..data[upgrade_character_price_id]
+	gui.set_text(self.money_percentage, money_percentage_string)
+	-- end
+	
+	self.btns = {}
+	self.btns["back"] = gui.get_node("back_btn")
+end
+
+function on_message(self, message_id, message, sender)
+	-- Add message-handling code here
+	-- Remove this function if not needed
+end
+
+function on_input(self, action_id, action)
+	if action_id == hash("touch") and action.released then
+		if gui.pick_node(self.btns["back"], action.x, action.y) then
+			print("switch to world")
+			switch(self, "menu")
+		end
+	end
+end
+

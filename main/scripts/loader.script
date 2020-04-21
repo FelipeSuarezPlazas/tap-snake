@@ -1,0 +1,71 @@
+loader_path = "main:/loader#loader"
+switch_path = "main:/switch#gui"
+
+
+data_path = sys.get_save_file("tap tap snake", "data")
+data = {}
+
+-- indexes
+money_id = 1
+last_money_collected_id = 2
+upgrade_character_price_id = 3
+level_id = 4
+
+-- values
+data[money_id] = 0
+data[last_money_collected_id] = 0
+data[upgrade_character_price_id] = 2500
+data[level_id] = 1
+
+sys.save(data_path, data)
+
+function init(self)
+	msg.post("@render:", "use_fixed_fit_projection", { near = -1, far = 1 })
+
+	--The loader needs to have the acquire_input_focus or the proxy collections called from here 
+	-- are never going to have input focus (you also need to call this same msg in the script
+	-- you want input)
+	msg.post(".", "acquire_input_focus")
+
+	self.old_scene = ""
+	self.actual_scene = "#splash"
+
+	-- Load the first collection you want to see
+	msg.post(self.actual_scene, "load")
+end
+
+--Call this function from any script to change the scene (collection)
+function switch(self, new_scene)
+	print("switch function called from")
+	msg.post(loader_path, "new_scene", {scene = new_scene})
+end
+
+function on_message(self, message_id, message, sender)
+	print("LOADER MESSAGE FUNCTION")
+	if message_id == hash("new_scene") then
+		self.old_scene = self.actual_scene
+		self.actual_scene = "#"..message.scene
+
+		--The switch is the frontal square we use to transition scenes (alpha to 1)
+		msg.post(switch_path, "switch")
+	elseif message_id == hash("switch") then
+
+		--Load the new_scene while switch is active (alpha 1)
+		msg.post(self.actual_scene, "load")
+	elseif message_id == hash("proxy_loaded") then
+		print("proxy loaded")
+
+		-- Init and enable all inside the new_scene (self.actual_Scene)
+		msg.post(self.actual_scene, "init")
+		msg.post(self.actual_scene, "enable")
+
+		--unload the old scene
+		msg.post(self.old_scene, "unload")
+	elseif message_id == hash("proxy_unloaded") then
+		print("proxy unloaded")
+
+		-- Finish the switch transition (alpha to 0)
+		msg.post(switch_path, "switch")
+	end
+end
+

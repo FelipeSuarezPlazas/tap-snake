@@ -1,0 +1,255 @@
+function init(self)
+	msg.post(".", "acquire_input_focus")
+
+	self.money = 0
+	self.money_plus = 10
+	self.money_text = "#money"
+	label.set_text(self.money_text, self.money)
+
+	self.map = "map"
+	self.map_pos = go.get_position(self.map)--vmath.vector3(0, 0, 0)
+	-- 1120 to animate the map till  the final map
+
+	self.maps_amount = 3
+	self.map_id = 1
+	self.map_t = 0.7
+
+	--go.animate(self.map, "position.y", go.PLAYBACK_ONCE_FORWARD, 0, go.EASING_LINEAR, 3)
+	
+	self.tilemaps = {
+		"one#tilemap",
+		"two#tilemap",
+		"three#tilemap",
+	}
+	self.tilemap_height = 570
+	--map_next_animation(self)
+	--tilemap_path = self.tilemaps[self.tilemap_id]
+	layer = "layer1"
+
+	self.tiles = {}
+	self.tiles["snake"] = 1
+	self.tiles["floor"] = 2
+	self.tiles["wall"] = 3
+	self.tiles["food"] = 4
+	self.tiles["finish"] = 5
+	
+	self.dirs = {}
+	self.dirs["up"] = vmath.vector3(0, 1, 0)
+	self.dirs["down"] = vmath.vector3(0, -1, 0)
+	self.dirs["right"] = vmath.vector3(1, 0, 0)
+	self.dirs["left"] = vmath.vector3(-1, 0, 0)
+	
+	self.path = {
+		--[[
+		{
+			self.dirs["up"],
+			self.dirs["right"],
+			self.dirs["down"],
+			self.dirs["right"],
+			self.dirs["up"],
+			self.dirs["left"],
+			self.dirs["up"],
+			self.dirs["right"],
+			self.dirs["up"],
+			self.dirs["left"],
+			self.dirs["up"],
+			
+			self.dirs["right"],
+			self.dirs["down"],
+			self.dirs["right"],
+			self.dirs["up"],
+			
+			self.dirs["right"],
+			self.dirs["down"],
+			self.dirs["right"],
+			
+			self.dirs["up"],
+			self.dirs["right"],
+			self.dirs["down"],
+			
+			self.dirs["right"],
+			self.dirs["down"],
+			self.dirs["left"],
+			self.dirs["down"],
+			self.dirs["right"],
+			self.dirs["down"],
+			self.dirs["left"],
+			self.dirs["down"],
+			self.dirs["right"],
+			self.dirs["down"],
+			self.dirs["left"],
+			self.dirs["down"],
+			self.dirs["right"],
+			self.dirs["down"],
+			self.dirs["left"],
+			self.dirs["up"],
+			
+			self.dirs["left"],
+			self.dirs["down"],
+			self.dirs["left"],
+			self.dirs["down"],
+
+			self.dirs["right"],
+			self.dirs["up"],
+			self.dirs["right"],
+			self.dirs["down"],
+			
+			self.dirs["left"],
+			self.dirs["down"],
+			self.dirs["left"],
+			self.dirs["down"],
+			
+			self.dirs["left"],
+			self.dirs["up"],
+			self.dirs["left"],
+			self.dirs["down"],
+			self.dirs["left"],
+			self.dirs["up"],
+		},]]--
+		{
+			self.dirs["up"],
+			self.dirs["right"],
+			self.dirs["down"],
+			self.dirs["right"],
+			self.dirs["up"],
+			self.dirs["right"],
+			self.dirs["down"],
+		},{
+			self.dirs["up"],
+			self.dirs["right"],
+			self.dirs["down"],
+			self.dirs["right"],
+			self.dirs["up"],
+			self.dirs["right"],
+			self.dirs["down"],
+			self.dirs["right"],
+		},
+	}
+	
+	self.snake_lenght = 5
+	self.snake_speed = 0.1
+
+	self.start_point = vmath.vector3(4, 3, 0)
+	--self.snake = {}
+	--self.head = vmath.vector3(self.start_point.x, self.start_point.y, 0)
+	--tilemap.set_tile(tilemap_path, layer, self.head.x, self.head.y, self.tiles["snake"])
+	--table.insert(self.snake, self.head)
+	
+	--local tile = vmath.vector3(self.head.x, self.head.y, 0)
+	--table.insert(self.snake, tile)
+	new(self)
+	
+	self.input = false
+end
+
+-- called with init function and also each time a new snake map is rendered ("next level") 
+-- el proceso del comienzo del mapa esigual para los tres mapas
+function new(self)
+	self.path_id = 1
+	tilemap_path = self.tilemaps[self.map_id]
+	
+	self.snake = {}
+
+	self.head = vmath.vector3(self.start_point.x, self.start_point.y, 0)
+	tilemap.set_tile(tilemap_path, layer, self.head.x, self.head.y, self.tiles["snake"])
+
+	local tile = vmath.vector3(self.head.x, self.head.y, 0)
+	table.insert(self.snake, tile)
+
+	self.start = false
+end
+
+
+-- called by a timer actioned in the on_input function each certain time
+function move(self)
+	--add the next path position to the head and insert it in the snake
+	self.head.x = self.head.x + self.path[self.map_id][self.path_id].x
+	self.head.y = self.head.y + self.path[self.map_id][self.path_id].y
+	table.insert(self.snake, vmath.vector3(self.head.x, self.head.y, 0))
+
+	--self.map_pos.y = self.map_pos.y + (30*self.path[self.map_id][self.path_id].y) * (-1)
+	--self.map_pos.x = self.map_pos.x + (30*self.path[self.map_id][self.path_id].x) * (-1)
+	--go.set_position(self.map_pos, self.map)
+
+	-- Logic depending on the next tile
+	local tile = tilemap.get_tile(tilemap_path, layer, self.head.x, self.head.y)
+	if tile == self.tiles["floor"] then
+		-- just keep moving
+		tilemap.set_tile(tilemap_path, layer, self.head.x, self.head.y, self.tiles["snake"])
+		
+	elseif tile == self.tiles["snake"] or tile == self.tiles["wall"] then
+		-- you are dead my friend, exit and go to the menu
+		timer.cancel(self.move_snake_timer)
+		switch(self, "menu")
+		
+	elseif tile == self.tiles["food"] then
+		-- add score or the money depending
+		self.money = self.money + self.money_plus
+		label.set_text(self.money_text, self.money)
+		tilemap.set_tile(tilemap_path, layer, self.head.x, self.head.y, self.tiles["snake"])
+		
+	elseif tile == self.tiles["finish"] then
+		-- crate a remove tail timer to simulate the snake lefting the map and cancel the move snake timer
+		timer.cancel(self.move_snake_timer)
+		self.remove_snake_timer = timer.delay(self.snake_speed, true, remove_snake)
+	end
+
+	-- remove the tail so it mantains the same size
+	if #self.snake > self.snake_lenght then
+		remove_snake(self)
+	end
+end
+
+-- called each time the move function its called (depending on the size) or running independently 
+-- each certain time to simulate the snake is lefting the map
+function remove_snake(self)
+	local removed = table.remove(self.snake, 1)
+	tilemap.set_tile(tilemap_path, layer, removed.x, removed.y, self.tiles["floor"])
+
+	if #self.snake == 1 then
+		-- cancel the remove snake timer it is gone
+		timer.cancel(self.remove_snake_timer)
+
+		-- once the snake has "left the map" depending on the map_id 
+		-- go to the win collection or simply go to the next map
+		self.map_id = self.map_id + 1
+		if self.map_id > 1 then -- map counter
+			data[last_money_collected_id] = self.money
+			data[money_id] = data[money_id] + self.money
+			data[level_id] = data[level_id] + 1
+			sys.save("data", data)
+			
+			switch(self, "win")
+		else
+			map_next_animation(self)
+			new(self)
+		end
+	end
+end
+
+function map_next_animation(self)
+	--self.map_pos.y = self.map_pos.y - self.tilemap_height
+	--go.set_position(self.map_pos, self.map)
+	--go.animate(self.map, "position", go.PLAYBACK_ONCE_FORWARD, self.map_pos, go.EASING_LINEAR, self.map_t)
+end
+
+function on_input(self, action_id, action)
+	if action_id == hash("touch") and action.pressed then
+		print(self.path_id.." "..#self.path[self.map_id])
+		if not self.start then
+			self.start = true
+			move(self)
+			self.move_snake_timer = timer.delay(self.snake_speed, true, move)
+		elseif self.path_id < #self.path[self.map_id] then
+			self.path_id = self.path_id + 1
+			print("MAP_ID "..self.map_id..", "..#self.path[self.map_id]..", "..self.path_id)
+		end
+	end
+end
+
+function on_message(self, message_id, message, sender)
+	-- Add message-handling code here
+	-- Remove this function if not needed
+end
+
+

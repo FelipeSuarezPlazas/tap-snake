@@ -1,0 +1,10 @@
+function init(self)
+	self.box = gui.get_node("template/box")
+	self.on = false
+
+	timer.delay(2, false,splash_final)
+end
+
+function splash_final(self)
+	switch(self, "menu")
+end

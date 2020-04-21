@@ -1,0 +1,54 @@
+function init(self)
+	msg.post(".", "acquire_input_focus")
+
+	-- Money percentage
+	self.money_percentage = gui.get_node("template/money")
+	local money_percentage_string = data[money_id].." / "..data[upgrade_character_price_id]
+	gui.set_text(self.money_percentage, money_percentage_string)
+	-- end
+
+	-- progress timer relation money grow
+	local progress_timer_size = gui.get_size(gui.get_node("template/progress_timer_ground"))
+	self.progress_timer = gui.get_node("template/progress_timer")
+	local progress_timer_width = (data[money_id] * progress_timer_size.x) / data[upgrade_character_price_id]
+	if progress_timer_width > progress_timer_size.x then progress_timer_width = progress_timer_size.x end
+	local size = vmath.vector3(progress_timer_width, progress_timer_size.y, 0)
+	gui.set_size(self.progress_timer, size)
+	-- end
+
+	-- level
+	self.level = gui.get_node("level")
+	gui.set_text(self.level, "level "..data[level_id])
+	-- end
+
+	-- missions
+	self.missions = {}
+	-- end
+
+	-- buttons
+	self.btns = {}
+	self.btns["start"] = gui.get_node("start_btn")
+	self.btns["store"] = gui.get_node("template/store_btn")
+	-- end
+end
+
+function final(self)
+	msg.post(".", "release_input_focus")
+end
+
+function on_message(self, message_id, message, sender)
+	
+end
+
+function on_input(self, action_id, action)
+	if action_id == hash("touch") and action.released then
+		if gui.pick_node(self.btns["start"], action.x, action.y) then
+			print("switch to world")
+			switch(self, "world")
+		elseif gui.pick_node(self.btns["store"], action.x, action.y) then
+			print("switch to store")
+			switch(self, "store")
+		end
+	end
+end
+

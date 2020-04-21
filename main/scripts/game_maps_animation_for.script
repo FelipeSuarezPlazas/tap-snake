@@ -1,0 +1,154 @@
+function init(self)
+	msg.post(".", "acquire_input_focus")
+
+	self.money = 0
+	self.money_plus = 10
+	self.money_text = "#money"
+	label.set_text(self.money_text, self.money)
+
+	self.map_ipos = vmath.vector3(0, 600, 0)
+	self.map_fpos = vmath.vector3(0, 0, 0)
+
+	self.maps = {
+		"map1",
+		"map2",
+		"map3",
+	}
+	self.map_id = 1
+	self.map_t = 0.2
+
+	local pos = vmath.vector3(self.map_ipos.x, self.map_ipos.y, 0)
+	for i,v in ipairs(self.maps) do
+		pos.z = pos.z + 0.1
+		go.set_position(pos, v)
+	end
+
+	map_next_animation(self)
+	
+	self.tilemaps = {
+		"map1#map",
+		"map2#map",
+		"map3#map",
+	}
+	--tilemap_path = self.tilemaps[self.tilemap_id]
+	layer = "layer1"
+
+	self.tiles = {}
+	self.tiles["snake"] = 1
+	self.tiles["floor"] = 2
+	self.tiles["wall"] = 3
+	self.tiles["food"] = 4
+	self.tiles["finish"] = 5
+	
+	self.dirs = {}
+	self.dirs["up"] = vmath.vector3(0, 1, 0)
+	self.dirs["down"] = vmath.vector3(0, -1, 0)
+	self.dirs["right"] = vmath.vector3(1, 0, 0)
+	self.dirs["left"] = vmath.vector3(-1, 0, 0)
+	
+	self.path = {
+		self.dirs["up"],
+		self.dirs["right"],
+		self.dirs["down"],
+		self.dirs["right"],
+		self.dirs["up"],
+	}
+	
+	self.snake_lenght = 3
+	self.snake_speed = 0.08
+
+	self.start_point = vmath.vector3(4, 3, 0)
+	--self.snake = {}
+	--self.head = vmath.vector3(self.start_point.x, self.start_point.y, 0)
+	--tilemap.set_tile(tilemap_path, layer, self.head.x, self.head.y, self.tiles["snake"])
+	--table.insert(self.snake, self.head)
+	
+	--local tile = vmath.vector3(self.head.x, self.head.y, 0)
+	--table.insert(self.snake, tile)
+	new(self)
+	
+	self.input = false
+end
+
+function new(self)
+	self.path_id = 1
+	tilemap_path = self.tilemaps[self.map_id]
+	
+	self.snake = {}
+
+	self.head = vmath.vector3(self.start_point.x, self.start_point.y, 0)
+	tilemap.set_tile(tilemap_path, layer, self.head.x, self.head.y, self.tiles["snake"])
+
+	local tile = vmath.vector3(self.head.x, self.head.y, 0)
+	table.insert(self.snake, tile)
+
+	self.start = false
+end
+
+function move(self)
+	self.head.x = self.head.x + self.path[self.path_id].x
+	self.head.y = self.head.y + self.path[self.path_id].y
+	table.insert(self.snake, vmath.vector3(self.head.x, self.head.y, 0))
+	
+	local tile = tilemap.get_tile(tilemap_path, layer, self.head.x, self.head.y)
+	if tile == self.tiles["snake"] or tile == self.tiles["wall"] then
+		timer.cancel(self.move_snake_timer)
+		switch(self, "menu")
+	elseif tile == self.tiles["floor"] then
+		tilemap.set_tile(tilemap_path, layer, self.head.x, self.head.y, self.tiles["snake"])
+	elseif tile == self.tiles["food"] then
+		self.money = self.money + self.money_plus
+		label.set_text(self.money_text, self.money)
+		tilemap.set_tile(tilemap_path, layer, self.head.x, self.head.y, self.tiles["snake"])
+	elseif tile == self.tiles["finish"] then
+		timer.cancel(self.move_snake_timer)
+		self.remove_snake_timer = timer.delay(self.snake_speed, true, remove_snake)
+	end
+
+	if #self.snake > self.snake_lenght then
+		remove_snake(self)
+	end
+end
+
+function remove_snake(self)
+	local removed = table.remove(self.snake, 1)
+	tilemap.set_tile(tilemap_path, layer, removed.x, removed.y, self.tiles["floor"])
+
+	if #self.snake == 1 then
+		timer.cancel(self.remove_snake_timer)
+		next(self)
+	end
+end
+
+function next(self)
+	self.map_id = self.map_id + 1
+	if self.map_id > #self.maps then
+		switch(self, "menu")
+	else
+		map_next_animation(self)
+		new(self)
+	end
+end
+
+function map_next_animation(self)
+	go.animate(self.maps[self.map_id], "position", go.PLAYBACK_ONCE_FORWARD, self.map_fpos, go.EASING_LINEAR, self.map_t)
+end
+
+function on_input(self, action_id, action)
+	if action_id == hash("touch") and action.pressed then
+		if not self.start then
+			self.start = true
+			move(self)
+			self.move_snake_timer = timer.delay(self.snake_speed, true, move)
+		elseif self.path_id < #self.path then
+			self.path_id = self.path_id + 1
+		end
+	end
+end
+
+function on_message(self, message_id, message, sender)
+	-- Add message-handling code here
+	-- Remove this function if not needed
+end
+
+

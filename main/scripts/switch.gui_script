@@ -1,0 +1,20 @@
+function init(self)
+	self.box = gui.get_node("template/box")
+	self.on = false
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("switch") then
+		if not self.on then
+			gui.animate(self.box, "color.w", 1, gui.EASING_LINEAR, 0.3, 0, finish)
+		else
+			gui.animate(self.box, "color.w", 0, gui.EASING_LINEAR, 0.3)
+		end
+
+		self.on = not self.on
+	end
+end
+
+function finish(self)
+	msg.post(loader_path, "switch")
+end

@@ -1,0 +1,30 @@
+script: ""
+fonts {
+  name: "big"
+  font: "/main/fonts/big.font"
+}
+fonts {
+  name: "extra_small"
+  font: "/main/fonts/extra_small.font"
+}
+fonts {
+  name: "normal"
+  font: "/main/fonts/normal.font"
+}
+fonts {
+  name: "small"
+  font: "/main/fonts/small.font"
+}
+textures {
+  name: "main"
+  texture: "/main/main.atlas"
+}
+background_color {
+  x: 0.0
+  y: 0.0
+  z: 0.0
+  w: 0.0
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT
+max_nodes: 512
